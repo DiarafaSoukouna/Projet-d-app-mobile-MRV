@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity, StyleSheet, View, ScrollView } from 'react-native';
+import { Text, TouchableOpacity, StyleSheet, View, ScrollView, SafeAreaView} from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Entypo from '@expo/vector-icons/Entypo';
@@ -16,7 +16,7 @@ export default function NotificationScreen() {
       <View style={styles.cardContent}>
         <Text style={styles.text}>{text}</Text>
         <TouchableOpacity onPress={onDelete}>
-          <Entypo name="trash" size={24} color="#d43b58" style={styles.iconButton} />
+          <Entypo name="trash" size={20} color="#d43b58" style={styles.iconButton} />
         </TouchableOpacity>
       </View>
     </View>
@@ -29,7 +29,7 @@ export default function NotificationScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <Ionicons name="arrow-back-outline" size={24} color="black" />
       </TouchableOpacity>
@@ -44,7 +44,7 @@ export default function NotificationScreen() {
           />
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -54,7 +54,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   backButton: {
-    marginTop: '13%',
     marginBottom: 10,
     marginLeft: 20,
   },
@@ -67,7 +66,7 @@ const styles = StyleSheet.create({
   card: {
     width: '90%',
     padding: 20,
-    marginTop: 20,
+    marginTop: 15,
     marginLeft: 15,
     borderRadius: 15,
     backgroundColor: '#b3f2f2',
