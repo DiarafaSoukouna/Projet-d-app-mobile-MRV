@@ -56,19 +56,20 @@ export default function Login() {
     try {
       setLoading(true);
       const formData = new FormData();
-      formData.append('identifiant', username);
-      formData.append('pass', password);
+      formData.append('username', username);
+      formData.append('password', password);
 
-      const response = await axios.post('https://data.mrv-mali.org/api/auth/login', formData, {
+      const response = await axios.post('https://admin.mrv-mali.org/apis/auth.routes.php', formData, {
         headers: { 
           'Content-Type': 'multipart/form-data'
         }
       });
   
       if (response.status === 200) {
-        console.log('Connexion réussie ! Token sauvegardé.', response.data );
+        // console.log('Connexion réussie ! Token sauvegardé.', response.data );
         const token = response.data.token;
-        await AsyncStorage.setItem('userToken', token); 
+        await AsyncStorage.setItem('userToken', token);
+        // await AsyncStorage.setItem('userData', response.data.data.user-data); 
         router.replace('/(tabs)');
       }
     } catch (error) {

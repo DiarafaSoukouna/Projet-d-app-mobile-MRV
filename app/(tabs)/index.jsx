@@ -20,7 +20,7 @@ export default function Home() {
   const [notifications, setNotifications] = useState([]);
 
   const get_secteurs = async () => {
-    get_data(`${BaseURL}/secteurs`, setSecteurs );
+    get_data(`${BaseURL}/secteurs.routes.php`, setSecteurs );
   }
   const get_actions = async () => {
     get_data(`${BaseURL}/actions`, setActions);
@@ -80,7 +80,7 @@ export default function Home() {
           {secteursAffiches.map((secteur, index) => (
             <TouchableOpacity key={index} onPress={() => router.push(`../secteur/${secteur.id}`)}>
               <View style={styles.card}>
-                <Text style={{fontSize: 17, fontWeight: 600, color: '#fff'}}>{secteur.nom_secteur}</Text>
+                <Text style={{fontSize: 17, fontWeight: 600, color: '#fff'}}>{secteur.name}</Text>
               </View>
             </TouchableOpacity>
           ))}

@@ -5,9 +5,8 @@ import { useRouter } from 'expo-router';
 import Entypo from '@expo/vector-icons/Entypo';
 import { TextInput } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import {get_data} from '../get_api';
 import { useState, useEffect, useRef } from 'react';
-import { BaseURL } from '../get_api';
+import { BaseURL, get_data } from '../get_api';
 
 
 export default function ActionScreen() {

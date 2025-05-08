@@ -9,10 +9,11 @@ export const get_data = async (url, setData) => {
 
     const response = await axios.get(url, { headers });
 
-    setData(response.data);
+    setData(response.data.data);
+    console.log('Data fetched successfully:', response.data.data);
   } catch (error) {
     console.error('Error:', error);
   }
 };
-export const BaseURL = 'https://data.mrv-mali.org/api'
+export const BaseURL = 'https://admin.mrv-mali.org/apis/'
 
