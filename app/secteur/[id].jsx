@@ -8,33 +8,26 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import {get_data} from '../get_api';
 import { useState, useEffect, useRef } from 'react';
 import { BaseURL } from '../get_api';
+import {LoadingComponent, useAnimations} from '../loading';
+
 
 
 export default function SecteurScreen() {
   const { id } = useLocalSearchParams(); 
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [secteurs, setSecteurs] = useState([]);
+  const [secteurs, setSecteurs] = useState({});
   const [sous_secteurs, setSousSecteurs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
-  const spinValue = useRef(new Animated.Value(0)).current;
-  
-  // Create rotation interpolation
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg']
-  });
-  
+
+  const { fadeAnim, scaleAnim, spinValue, animatedP, animatedP2 } = useAnimations();
+
+
   // Fonction modifiée pour s'assurer que les données sont correctement définies
   const get_secteurs = async () => {
     return new Promise((resolve) => {
-      get_data(`${BaseURL}/secteurs`, (data) => {
+      get_data(`${BaseURL}/secteurs.routes.php?id=${id}`, (data) => {
         setSecteurs(data);
-        console.log("Secteurs chargés:", data.length);
         resolve(data);
       });
     });
@@ -42,9 +35,9 @@ export default function SecteurScreen() {
   
   const get_sous_secteurs = async () => {
     return new Promise((resolve) => {
-      get_data(`${BaseURL}/sous_secteurs`, (data) => {
-        setSousSecteurs(data);
-        console.log("Sous-secteurs chargés:", data.length);
+      get_data(`${BaseURL}/secteurs.routes.php`, (data) => {
+        setSousSecteurs(data.filter((secteur) => secteur.parent_id !== 0));
+   
         resolve(data);
       });
     });
@@ -53,11 +46,7 @@ export default function SecteurScreen() {
   useEffect(() => {
     // Démarrer l'animation de rotation immédiatement
     Animated.loop(
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 1500,
-        useNativeDriver: true
-      })
+      animatedP
     ).start();
     
     const fetchData = async () => {
@@ -74,18 +63,7 @@ export default function SecteurScreen() {
           setIsLoading(false);
           
           // Démarrer les animations après que isLoading soit défini à false
-          Animated.parallel([
-            Animated.timing(fadeAnim, {
-              toValue: 1,
-              duration: 600,
-              useNativeDriver: true
-            }),
-            Animated.timing(scaleAnim, {
-              toValue: 1,
-              duration: 500,
-              useNativeDriver: true
-            })
-          ]).start();
+          Animated.parallel(animatedP2).start();
         }, 300);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
@@ -96,47 +74,25 @@ export default function SecteurScreen() {
     fetchData();
   }, []);
 
-  // Custom loading component
-  const LoadingComponent = () => (
-    <View style={styles.loadingContainer}>
-      <Animated.View style={[styles.loadingCircle, { transform: [{ rotate: spin }] }]}>
-        <View style={styles.innerCircle}>
-          <ActivityIndicator size="large" color="#ffffff" />
-        </View>
-      </Animated.View>
-      <Text style={styles.loadingText}>Chargement des données...</Text>
-      <View style={styles.loadingBars}>
-        {[1, 2, 3].map((_, index) => (
-          <Animated.View 
-            key={index}
-            style={[
-              styles.loadingBar,
-              { 
-                backgroundColor: '#01afaf',
-                marginLeft: index * 10
-              }
-            ]}
-          />
-        ))}
-      </View>
-    </View>
-  );
 
-  // Vérifier si les données sont disponibles
-  const currentSecteur = secteurs.find(secteur => secteur.id.toString() === id);
+  const currentSecteur = secteurs;
   const filteredSousSecteurs = sous_secteurs.filter(
-    sous_secteur => sous_secteur.secteur_id.toString() === id && 
-    sous_secteur.nom_sous_secteur.toLowerCase().includes(searchQuery.toLowerCase())
+    sous_secteur => sous_secteur.parent_id.toString() === id && 
+    sous_secteur.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 20 }}>
+       <View style={styles.header}>
+      <TouchableOpacity onPress={() => router.back()}>
         <Ionicons name="arrow-back-outline" size={24} color="black" />
       </TouchableOpacity>
+      <Text style={{fontSize: 22, fontWeight: 600}}>Secteur</Text>
+
+      </View>
       
       {isLoading ? (
-        <LoadingComponent />
+        <LoadingComponent Nom='secteurs' />
       ) : (
         <Animated.View 
           style={{ 
@@ -147,8 +103,8 @@ export default function SecteurScreen() {
         >
           {currentSecteur ? (
             <View>
-              <Text style={{ fontSize: 30, marginTop: 15, fontWeight: "500", marginLeft: 15 }}>
-                {currentSecteur.nom_secteur}
+              <Text style={{ fontSize: 20, marginTop: 15, fontWeight: "500", marginLeft: 15 }}>
+                {currentSecteur.name}
               </Text>
               <View style={styles.contBack}>
                 <Text style={styles.desc}>
@@ -165,14 +121,17 @@ export default function SecteurScreen() {
                   style={styles.input}
                 />
               </View>
-              <Text style={{ marginTop: 30, marginLeft: 15, fontSize: 20 }}>Sous secteurs liés</Text>
+                
+                <Text style={{ marginTop: 30, marginLeft: 15, fontSize: 20 }}>Sous secteurs liés </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                 {filteredSousSecteurs.map((sous_secteur) => (
                   <TouchableOpacity onPress={() => router.push(`../sous_secteur/${sous_secteur.id}`)} key={sous_secteur.id} style={styles.card}>
                  
-                    <Text style={styles.text}>{sous_secteur.nom_sous_secteur}</Text>
-                    <Text style={{ fontWeight: "300", marginTop: 10, fontSize: 12 }}>
-                      {sous_secteur.description}
+                    <Text style={styles.text}>{sous_secteur.name}</Text>
+                   <Text style={{ fontWeight: "400", marginTop: 10, fontSize: 12, fontFamily: "sans-serif" }}>
+                      {sous_secteur.description.length > 80
+                        ? sous_secteur.description.substring(0, 80) + '...'
+                        : sous_secteur.description}
                     </Text>
                     <View style={{ alignItems: 'flex-end' }}>
                       <TouchableOpacity onPress={() => router.push(`../sous_secteur/${sous_secteur.id}`)}>
@@ -298,5 +257,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'red',
     textAlign: 'center',
-  }
+  },
+   header:{
+      backgroundColor: '#e6fafa',
+      padding: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap : 10
+    },
 });

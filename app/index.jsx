@@ -64,14 +64,12 @@ export default function Login() {
           'Content-Type': 'multipart/form-data'
         }
       });
-  
-      if (response.status === 200) {
-        // console.log('Connexion réussie ! Token sauvegardé.', response.data );
+
         const token = response.data.token;
         await AsyncStorage.setItem('userToken', token);
-        // await AsyncStorage.setItem('userData', response.data.data.user-data); 
+        await AsyncStorage.setItem('userId',  JSON.stringify(response.data.data.id)); 
         router.replace('/(tabs)');
-      }
+      
     } catch (error) {
       if (error.response) {
         console.log('Échec de connexion :', error.response.data.message);

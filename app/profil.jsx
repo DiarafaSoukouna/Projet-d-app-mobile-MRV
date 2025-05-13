@@ -17,6 +17,9 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { get_data, BaseURL } from './get_api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const { width } = Dimensions.get('window');
 const HEADER_MAX_HEIGHT = 220;
@@ -24,17 +27,31 @@ const HEADER_MIN_HEIGHT = Platform.OS === 'ios' ? 90 : 70;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 const ProfileScreen = () => {
-  const id =1;
   const router = useRouter();
   const [menu, setMenu] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [isScrolled, setIsScrolled] = useState(false);
+  const [id, setId] = useState(1);
+  const [user, setUser] = useState({});
+
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
 
+  const getInitials = (text1, text2) => {
+  const firstLetter1 = text1?.trim()?.charAt(0).toUpperCase() || '';
+  const firstLetter2 = text2?.trim()?.charAt(0).toUpperCase() || '';
+  return firstLetter1 + firstLetter2;
+};
+  const get_user = async () => {
+    get_data(`${BaseURL}/users.routes.php?id=${id}`, setUser);
+  }
+  // const get_groupes = async () => {
+  //   get_data(`${BaseURL}/groupes.routes.php?id=${id}`, setUser);
+  // }
   useEffect(() => {
+  setId(AsyncStorage.getItem('userId'));
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -48,6 +65,7 @@ const ProfileScreen = () => {
         useNativeDriver: true,
       })
     ]).start();
+   get_user()
   }, []);
 
   const closeMenu = () => {
@@ -66,263 +84,188 @@ const ProfileScreen = () => {
     extrapolate: 'clamp',
   });
 
-  const titleOpacity = scrollY.interpolate({
-    inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
-    outputRange: [0, 0.5, 1],
-    extrapolate: 'clamp',
-  });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a8f8f" />
-      
-      {/* Fixed Header Background */}
-      <Animated.View style={[styles.header, { height: headerHeight }]}>
-        <LinearGradient
-          colors={['#0a8f8f', '#01afaf', '#3cc4c4']}
-          style={styles.headerGradient}
-        >
-          <Animated.View style={[styles.headerContent, { opacity: headerOpacity }]}>
-            <View style={styles.pic}>
-              <Text style={styles.initials}>DS</Text>
-            </View>
-            <Text style={styles.nom}>Diarafa Soukouna</Text>
-            <View style={styles.badgeContainer}>
-              <View style={styles.badge}>
-                <Ionicons name="shield-checkmark" size={14} color="#fff" style={{ marginRight: 4 }} />
-                <Text style={styles.badgeText}>Administrateur</Text>
-              </View>
-            </View>
-          </Animated.View>
-        </LinearGradient>
-      </Animated.View>
+<SafeAreaView style={styles.container}>
+  <StatusBar barStyle="light-content" backgroundColor="#0a8f8f" />
 
-      {/* Fixed Navigation Bar */}
-      <View style={[styles.navbar, isScrolled && styles.navbarScrolled]}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back-outline" size={22} color={isScrolled ? "#01afaf" : "#fff"} />
-        </TouchableOpacity>
 
-        <Animated.View 
-          style={[
-            styles.navbarTitleContainer, 
-            { opacity: titleOpacity }
-          ]}
-        >
-          <Text style={[styles.navbarTitle, isScrolled && styles.navbarTitleScrolled]}>
-            Diarafa Soukouna
-          </Text>
-        </Animated.View>
+  <View style={styles.header}>
+    <LinearGradient colors={['#0a8f8f', '#01afaf', '#3cc4c4']} style={styles.headerGradient}>
+      <View style={{justifyContent: 'space-between' , flexDirection: 'row',  paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 40 : 20 }}>
+         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <Ionicons name="arrow-back-outline" size={22} color="#fff" />
+      </TouchableOpacity>
 
-        <TouchableOpacity 
-          onPress={() => setMenu(!menu)} 
-          style={styles.menuButton}
-        >
-          <Ionicons name="ellipsis-horizontal" size={22} color={isScrolled ? "#01afaf" : "#fff"} />
-        </TouchableOpacity>
+      <TouchableOpacity onPress={() => setMenu(!menu)} style={styles.menuButton}>
+        <Ionicons name="ellipsis-vertical" size={22} color={isScrolled ? "#01afaf" : "#fff"} />
+      </TouchableOpacity>
+      </View>
+     
+
+      <View style={styles.headerContent}>
+        <View style={styles.pic}>
+          <Text style={styles.initials}>{getInitials(user.prenom, user.nom)}</Text>
+        </View>
+        <Text style={styles.nom}>{user.prenom} {user.nom}</Text>
+
+        <View style={styles.badgeContainer}>
+          <View style={styles.badge}>
+            <Ionicons name="shield-checkmark-outline" size={14} color="#fff" style={{ marginRight: 4 }} />
+            <Text style={styles.badgeText}>{user.fonction}</Text>
+          </View>
+        </View>
+      </View>
+    </LinearGradient>
+  </View>
+
+
+  {menu && (
+    <TouchableWithoutFeedback onPress={closeMenu}>
+      <View style={styles.overlay}>
+        <View style={styles.dropdown}>
+          <TouchableOpacity
+            onPress={() => {
+              setMenu(false);
+              router.push('./mot_de_passe');
+            }}
+            style={styles.menuItem}
+          >
+            <Ionicons name="create-outline" size={18} color="#01afaf" style={styles.menuIcon} />
+            <Text style={styles.menuText}>Modifier mon mot de passe</Text>
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
+          <TouchableOpacity style={styles.menuItem}>
+            <Ionicons name="log-out-outline" size={18} color="#db2a3e" style={styles.menuIcon} />
+            <Text style={styles.menuTextDanger}>Déconnexion</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableWithoutFeedback>
+  )}
+
+
+  <ScrollView
+    contentContainerStyle={[styles.scrollContent, { paddingTop: HEADER_MAX_HEIGHT + 16 }]}
+    scrollEventThrottle={16}
+    onScroll={Animated.event(
+      [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+      {
+        useNativeDriver: false,
+        listener: event => {
+          const offsetY = event.nativeEvent.contentOffset.y;
+          setIsScrolled(offsetY > 10);
+        },
+      }
+    )}
+    showsVerticalScrollIndicator={false}
+    bounces={false}
+  >
+    <View style={styles.infoCard}>
+      <View style={styles.infoCardHeader}>
+        <Ionicons name="person" size={20} color="#01afaf" />
+        <Text style={styles.infoCardTitle}>Informations personnelles</Text>
       </View>
 
-      {menu && (
-        <TouchableWithoutFeedback onPress={closeMenu}>
-          <View style={styles.overlay}>
-            <Animated.View 
-              style={[styles.dropdown, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
-            >
-              <TouchableOpacity 
-                onPress={() => {
-                  setMenu(false);
-                  router.push('./modifier_profil');
-                }} 
-                style={styles.menuItem}
-              >
-                <Ionicons name="create-outline" size={18} color="#01afaf" style={styles.menuIcon} />
-                <Text style={styles.menuText}>Modifier mon profil</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.menuDivider} />
-              
-              <TouchableOpacity style={styles.menuItem}>
-                <Ionicons name="log-out-outline" size={18} color="#db2a3e" style={styles.menuIcon} />
-                <Text style={styles.menuTextDanger}>Déconnexion</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-        </TouchableWithoutFeedback>
-      )}
+      <View style={styles.infoItem}>
+        <Ionicons name="mail-outline" size={18} color="#01afaf" />
+        <Text style={styles.infoText}>{user.email}</Text>
+      </View>
 
-      {/* Main Scrollable Content */}
-      <Animated.ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: HEADER_MAX_HEIGHT + 16 }]}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { 
-            useNativeDriver: false,
-            listener: event => {
-              const offsetY = event.nativeEvent.contentOffset.y;
-              setIsScrolled(offsetY > 10);
-            }
-          }
-        )}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-      >
-        <Animated.View 
-          style={[styles.contentContainer, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [20, 0]
-          })}] }]}
+      <View style={styles.infoItem}>
+        <Ionicons name="person-circle-outline" size={18} color="#01afaf" />
+        <Text style={styles.infoText}>{user.username}</Text>
+      </View>
+
+      <View style={styles.infoItem}>
+        <Ionicons name="call" size={18} color="#01afaf" />
+        <Text style={styles.infoText}>{user.phone}</Text>
+      </View>
+
+      <View style={[styles.infoItem, styles.noBorder]}>
+        <Ionicons name="briefcase-outline" size={18} color="#01afaf" />
+        <Text style={styles.infoText}>{user.fonction}</Text>
+      </View>
+    </View>
+
+    <View style={styles.sectionHeader}>
+      <Ionicons name="people" size={20} color="#01afaf" />
+      <Text style={styles.sectionTitle}>Groupes de travail</Text>
+    </View>
+
+
+    <View style={styles.cardList}>
+      {[
+        {
+          titre: "Projet Marketing Q2",
+          date: "12/02/2025",
+          membres: "8 membres",
+          statut: "Actif",
+          badgeStyle: styles.cardBadge,
+          badgeTextStyle: styles.cardBadgeText,
+        },
+        {
+          titre: "Développement App Mobile",
+          date: "12/02/2025",
+          membres: "5 membres",
+          statut: "Urgent",
+          badgeStyle: [styles.cardBadge, styles.cardBadgeUrgent],
+          badgeTextStyle: [styles.cardBadgeText, styles.cardBadgeTextUrgent],
+        },
+        {
+          titre: "Analyse des données",
+          date: "05/01/2025",
+          membres: "3 membres",
+          statut: "Terminé",
+          badgeStyle: [styles.cardBadge, styles.cardBadgeCompleted],
+          badgeTextStyle: [styles.cardBadgeText, styles.cardBadgeTextCompleted],
+        },
+      ].map((card, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.card}
+          activeOpacity={0.9}
+          onPress={() => router.push(`./groupe/${id}`)}
         >
-          <View style={styles.infoCard}>
-            <View style={styles.infoCardHeader}>
-              <Ionicons name="person" size={20} color="#01afaf" />
-              <Text style={styles.infoCardTitle}>Informations personnelles</Text>
+          <LinearGradient
+            colors={['rgba(1, 175, 175, 0.08)', 'rgba(1, 175, 175, 0.03)']}
+            style={styles.cardGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.titre}>{card.titre}</Text>
+              <View style={card.badgeStyle}>
+                <Text style={card.badgeTextStyle}>{card.statut}</Text>
+              </View>
             </View>
-            
-            <View style={styles.infoItem}>
-              <Ionicons name="mail-outline" size={18} color="#01afaf" />
-              <Text style={styles.infoText}>diarafasouk@gmail.com</Text>
-            </View>
-            
-        
-            
-            <View style={[styles.infoItem, styles.noBorder]}>
-              <Ionicons name="location-outline" size={18} color="#01afaf" />
-              <Text style={styles.infoText}>Paris, France</Text>
-            </View>
-          </View>
-          
-          <View style={styles.sectionHeader}>
-            <Ionicons name="people" size={20} color="#01afaf" />
-            <Text style={styles.sectionTitle}>Groupes de travail</Text>
-          </View>
-          
-          <View style={styles.cardList}>
-            <TouchableOpacity 
-              style={styles.card}
-              activeOpacity={0.9}
-              onPress={() => router.push(`./groupe/${id}`)}
-            >
-              <LinearGradient
-                colors={['rgba(1, 175, 175, 0.08)', 'rgba(1, 175, 175, 0.03)']}
-                style={styles.cardGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.titre}>Projet Marketing Q2</Text>
-                  <View style={styles.cardBadge}>
-                    <Text style={styles.cardBadgeText}>Actif</Text>
-                  </View>
-                </View>
-                
-                <View style={styles.cardContent}>
-                  <View style={styles.cardInfo}>
-                    <View style={styles.cardInfoItem}>
-                      <AntDesign name="calendar" size={16} color="#01afaf" />
-                      <Text style={styles.dateText}>12/02/2025</Text>
-                    </View>
-                    
-                    <View style={styles.cardInfoItem}>
-                      <Ionicons name="people-outline" size={16} color="#01afaf" />
-                      <Text style={styles.dateText}>8 membres</Text>
-                    </View>
-                  </View>
-                  
-                  <View style={styles.viewButton}>
-                    <Text style={styles.viewButtonText}>Voir</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#fff" />
-                  </View>
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.card}
-              activeOpacity={0.9}
-              onPress={() => router.push(`./groupe/${id}`)}
-            >
-              <LinearGradient
-                colors={['rgba(1, 175, 175, 0.08)', 'rgba(1, 175, 175, 0.03)']}
-                style={styles.cardGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.titre}>Développement App Mobile</Text>
-                  <View style={[styles.cardBadge, styles.cardBadgeUrgent]}>
-                    <Text style={[styles.cardBadgeText, styles.cardBadgeTextUrgent]}>Urgent</Text>
-                  </View>
+            <View style={styles.cardContent}>
+              <View style={styles.cardInfo}>
+                <View style={styles.cardInfoItem}>
+                  <AntDesign name="calendar" size={16} color="#01afaf" />
+                  <Text style={styles.dateText}>{card.date}</Text>
                 </View>
-                
-                <View style={styles.cardContent}>
-                  <View style={styles.cardInfo}>
-                    <View style={styles.cardInfoItem}>
-                      <AntDesign name="calendar" size={16} color="#01afaf" />
-                      <Text style={styles.dateText}>12/02/2025</Text>
-                    </View>
-                    
-                    <View style={styles.cardInfoItem}>
-                      <Ionicons name="people-outline" size={16} color="#01afaf" />
-                      <Text style={styles.dateText}>5 membres</Text>
-                    </View>
-                  </View>
-                  
-                  <View style={styles.viewButton}>
-                    <Text style={styles.viewButtonText}>Voir</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#fff" />
-                  </View>
+
+                <View style={styles.cardInfoItem}>
+                  <Ionicons name="people-outline" size={16} color="#01afaf" />
+                  <Text style={styles.dateText}>{card.membres}</Text>
                 </View>
-              </LinearGradient>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.card}
-              activeOpacity={0.9}
-              onPress={() => router.push(`./groupe/${id}`)}
-            >
-              <LinearGradient
-                colors={['rgba(1, 175, 175, 0.08)', 'rgba(1, 175, 175, 0.03)']}
-                style={styles.cardGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.titre}>Analyse des données</Text>
-                  <View style={[styles.cardBadge, styles.cardBadgeCompleted]}>
-                    <Text style={[styles.cardBadgeText, styles.cardBadgeTextCompleted]}>Terminé</Text>
-                  </View>
-                </View>
-                
-                <View style={styles.cardContent}>
-                  <View style={styles.cardInfo}>
-                    <View style={styles.cardInfoItem}>
-                      <AntDesign name="calendar" size={16} color="#01afaf" />
-                      <Text style={styles.dateText}>05/01/2025</Text>
-                    </View>
-                    
-                    <View style={styles.cardInfoItem}>
-                      <Ionicons name="people-outline" size={16} color="#01afaf" />
-                      <Text style={styles.dateText}>3 membres</Text>
-                    </View>
-                  </View>
-                  
-                  <View style={styles.viewButton}>
-                    <Text style={styles.viewButtonText}>Voir</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#fff" />
-                  </View>
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-          
-        
-        </Animated.View>
-      </Animated.ScrollView>
-    </SafeAreaView>
+              </View>
+
+              <View style={styles.viewButton}>
+                <Text style={styles.viewButtonText}>Voir</Text>
+                <Ionicons name="chevron-forward" size={16} color="#fff" />
+              </View>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+      ))}
+    </View>
+  </ScrollView>
+</SafeAreaView>
   );
 };
 
@@ -347,6 +290,7 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 1,
     overflow: 'hidden',
+    
 
   },
   headerGradient: {
@@ -356,8 +300,7 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     alignItems: 'center',
-    paddingBottom: 20,
-    top :10
+    
 
   },
   navbar: {
@@ -500,6 +443,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginBottom: 24,
+    marginTop: 15,
     shadowColor: '#01afaf',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -539,6 +483,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    marginLeft: 10,
   },
   sectionTitle: {
     fontSize: 18,

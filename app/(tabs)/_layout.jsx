@@ -27,6 +27,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <MaterialIcons name="pending-actions" size={28} color={color} />,
         }}
       />
+       <Tabs.Screen
+        name="structures"
+        options={{
+          title: 'Structures',
+          tabBarIcon: ({ color }) => <FontAwesome6 name="building-columns" size={28} color={color}  />,
+        }}
+      />
          <Tabs.Screen
         name="documents"
         options={{

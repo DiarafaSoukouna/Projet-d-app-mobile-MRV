@@ -11,16 +11,16 @@ import {LoadingComponent, useAnimations} from '../loading';
 export default function Tab() {
   const router = useRouter();
   const id = 1;
-  const [actions, setActions] = useState([]);
+  const [structures, setStructures] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const { fadeAnim, scaleAnim, spinValue, animatedP, animatedP2 } = useAnimations();
 
 
   
-  const get_actions = async () => {
+  const get_structures = async () => {
     return new Promise((resolve) => {
-      get_data(`${BaseURL}/actions.routes.php`, (data) => {
-        setActions(data);
+      get_data(`${BaseURL}structures.routes.php`, (data) => {
+        setStructures(data);
         resolve(data);
       });
     });
@@ -37,7 +37,7 @@ export default function Tab() {
       
       try {
         // Charger les données
-        await get_actions();
+        await get_structures();
         
         console.log("Données chargées avec succès");
         
@@ -64,7 +64,7 @@ export default function Tab() {
   return (
     <SafeAreaView style={styles.container}>
       {isLoading ? (
-        <LoadingComponent Nom="actions"/>
+        <LoadingComponent Nom="structures"/>
       ) : (
         <Animated.View 
           style={{ 
@@ -73,15 +73,15 @@ export default function Tab() {
             transform: [{ scale: scaleAnim }]
           }}
         >
-          <Text style={{fontSize: 30, fontWeight: "500", marginLeft: 10}}>Actions</Text>
+          <Text style={{fontSize: 30, fontWeight: "500", marginLeft: 10}}>Structures</Text>
           <ScrollView>
-            {actions.map((action) => (
+            {structures.map((action) => (
               <TouchableOpacity 
                 key={action.id}
                 onPress={() => router.push(`../action/${action.id}`)}
               >
-                <View style={styles.card}>
-                  <Text style={{color: '#01afaf', fontSize: 16}}>{action.name}</Text>
+                <TouchableOpacity onPress={() => router.push(`../structure/${action.id}`)} style={styles.card}>
+                  <Text style={{color: '#01afaf', fontSize: 16}}>{action.sigle}</Text>
                   <View style={{flexDirection: 'row', gap: 10}}>
                     <View style={styles.verticleLine}></View>
                     <Text style={{maxWidth: '90%', marginTop: 10, fontWeight: "300"}}>
@@ -89,6 +89,11 @@ export default function Tab() {
                       {action.description}
                     </Text>
                   </View>
+                   <Text style={{marginTop : 10}} > <Text style={{color: '#01afaf', fontSize: 16}}>Adresse :</Text> {action.address}</Text>
+                   <Text style={{marginTop : 10}} > <Text style={{color: '#01afaf', fontSize: 16}}>Email :</Text> {action.email}</Text>
+                   <Text style={{marginTop : 10}} > <Text style={{color: '#01afaf', fontSize: 16}}>Type :</Text> {action.type_name}</Text>
+
+
                   <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 20}}>
                     <View style={{flexDirection: 'row'}}>
                       <AntDesign name="calendar" size={24} color="#01AFAF" />
@@ -96,11 +101,11 @@ export default function Tab() {
                         Date: {new Date(action.created_at).toISOString().slice(0, 10).replace(/-/g, '/')} 
                       </Text>
                     </View>
-                    <TouchableOpacity onPress={() => router.push(`../action/${action.id}`)}>
+                    <TouchableOpacity>
                       <Entypo name="eye" size={24} color="#01afaf" />
                     </TouchableOpacity>
                   </View>
-                </View>
+                </TouchableOpacity>
               </TouchableOpacity>
             ))}
           </ScrollView>

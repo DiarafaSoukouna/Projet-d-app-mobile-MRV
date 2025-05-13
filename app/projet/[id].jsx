@@ -8,6 +8,8 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import {get_data} from '../get_api';
 import { useState, useEffect, useRef } from 'react';
 import { BaseURL } from '../get_api';
+import {LoadingComponent, useAnimations, SearchBar} from '../loading';
+
 
 
 export default function ProjetScreen() {
@@ -20,20 +22,14 @@ export default function ProjetScreen() {
   const [priority, setPriority] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
-  const spinValue = useRef(new Animated.Value(0)).current;
+  const { fadeAnim, scaleAnim, spinValue, animatedP, animatedP2 } = useAnimations();
+
   
-  // Create rotation interpolation
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg']
-  });
+ 
   
   const get_projet = async () => {
     return new Promise((resolve) => {
-      get_data(`${BaseURL}/projets`, (data) => {
+      get_data(`${BaseURL}/projets.routes.php`, (data) => {
         setProjets(data);
         resolve(data);
       });
@@ -42,25 +38,25 @@ export default function ProjetScreen() {
   
   const get_actions = async () => {
     return new Promise((resolve) => {
-      get_data(`${BaseURL}/actions`, (data) => {
+      get_data(`${BaseURL}/actions.routes.php`, (data) => {
         setActions(data);
         resolve(data);
       });
     });
   }
   
-  const get_indicateurs = async () => {
-    return new Promise((resolve) => {
-      get_data(`${BaseURL}/indicateurs`, (data) => {
-        setIndicateurs(data);
-        resolve(data);
-      });
-    });
-  }
+  // const get_indicateurs = async () => {
+  //   return new Promise((resolve) => {
+  //     get_data(`${BaseURL}/indicateurs`, (data) => {
+  //       setIndicateurs(data);
+  //       resolve(data);
+  //     });
+  //   });
+  // }
   
   const get_priority = async () => {  
     return new Promise((resolve) => {
-      get_data(`${BaseURL}/priority`, (data) => {
+      get_data(`${BaseURL}/priorites.routes.php`, (data) => {
         setPriority(data);
         resolve(data);
       });
@@ -75,11 +71,7 @@ export default function ProjetScreen() {
   useEffect(() => {
     // Démarrer l'animation de rotation immédiatement
     Animated.loop(
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 1500,
-        useNativeDriver: true
-      })
+      animatedP
     ).start();
     
     const fetchData = async () => {
@@ -90,7 +82,7 @@ export default function ProjetScreen() {
         await Promise.all([
           get_projet(),
           get_actions(),
-          get_indicateurs(),
+          // get_indicateurs(),
           get_priority()
         ]);
         
@@ -99,18 +91,9 @@ export default function ProjetScreen() {
           setIsLoading(false);
           
           // Démarrer les animations après que isLoading soit défini à false
-          Animated.parallel([
-            Animated.timing(fadeAnim, {
-              toValue: 1,
-              duration: 600,
-              useNativeDriver: true
-            }),
-            Animated.timing(scaleAnim, {
-              toValue: 1,
-              duration: 500,
-              useNativeDriver: true
-            })
-          ]).start();
+          Animated.parallel(
+            animatedP2
+          ).start();
         }, 300);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
@@ -121,32 +104,6 @@ export default function ProjetScreen() {
     fetchData();
   }, []);
 
-  // Custom loading component
-  const LoadingComponent = () => (
-    <View style={styles.loadingContainer}>
-      <Animated.View style={[styles.loadingCircle, { transform: [{ rotate: spin }] }]}>
-        <View style={styles.innerCircle}>
-          <ActivityIndicator size="large" color="#ffffff" />
-        </View>
-      </Animated.View>
-      <Text style={styles.loadingText}>Chargement du projet...</Text>
-      <View style={styles.loadingBars}>
-        {[1, 2, 3].map((_, index) => (
-          <Animated.View 
-            key={index}
-            style={[
-              styles.loadingBar,
-              { 
-                backgroundColor: '#01afaf',
-                marginLeft: index * 10
-              }
-            ]}
-          />
-        ))}
-      </View>
-    </View>
-  );
-
   // Vérifier si le projet existe
   const currentProjet = projets.find(projet => projet.id.toString() === id);
   const filteredIndicateurs = indicateurs.filter(
@@ -156,12 +113,16 @@ export default function ProjetScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 20 }}>
+      <View style={styles.header}>
+      <TouchableOpacity onPress={() => router.back()}>
         <Ionicons name="arrow-back-outline" size={24} color="black" />
       </TouchableOpacity>
+      <Text style={{fontSize: 22, fontWeight: 600}}>Projet</Text>
+
+      </View>
       
       {isLoading ? (
-        <LoadingComponent />
+        <LoadingComponent Nom='projets'/>
       ) : (
         <Animated.View 
           style={{ 
@@ -172,7 +133,7 @@ export default function ProjetScreen() {
         >
           {currentProjet ? (
             <ScrollView>
-              <Text style={{fontSize: 30, marginTop: 15, fontWeight: '500', marginLeft: 15}}>
+              <Text style={{fontSize: 20, marginTop: 15, fontWeight: '500', marginLeft: 15}}>
                 {currentProjet.name}
               </Text>
         
@@ -180,7 +141,7 @@ export default function ProjetScreen() {
                 <View style={{flexDirection: 'row', gap: 10, marginLeft: 20}}>
                   <Ionicons name="calendar-outline" size={24} color="#01afaf" />
                   <Text style={{marginTop: 4}}>
-                    Date : {new Date(currentProjet.created_date).toISOString().slice(0, 10).replace(/-/g, '/')}
+                    Date : {new Date(currentProjet.created_at).toISOString().slice(0, 10).replace(/-/g, '/')}
                   </Text>
                 </View>
                 <View style={{flexDirection: "row", gap: 10, marginRight: 20}}>
@@ -200,7 +161,7 @@ export default function ProjetScreen() {
               </Text>
               
               <Text style={{marginTop: 30, marginLeft: 15, fontSize: 20}}>
-                Action : {return_action(currentProjet.action_id)} 
+                Action : {currentProjet.action_name} 
               </Text>
               
               <View style={styles.searchContainer}>
@@ -298,6 +259,13 @@ const styles = StyleSheet.create({
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    header:{
+      backgroundColor: '#e6fafa',
+      padding: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap : 10
     },
     loadingCircle: {
       width: 80,

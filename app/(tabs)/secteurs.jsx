@@ -4,6 +4,7 @@ import Entypo from '@expo/vector-icons/Entypo';
 import {get_data} from '../get_api';
 import { useState, useEffect, useRef } from 'react';
 import { BaseURL } from '../get_api';
+import {LoadingComponent, useAnimations} from '../loading';
 
 
 export default function Tab() {
@@ -11,60 +12,36 @@ export default function Tab() {
   const [secteurs, setSecteurs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
-  const spinValue = useRef(new Animated.Value(0)).current;
-  
+  const { fadeAnim, scaleAnim, spinValue, animatedP, animatedP2 } = useAnimations();
   // Create rotation interpolation
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg']
-  });
+
   
   const get_secteurs = async () => {
     return new Promise((resolve) => {
-      get_data(`${BaseURL}/secteurs`, (data) => {
-        setSecteurs(data);
+      get_data(`${BaseURL}/secteurs.routes.php`, (data) => {
+        setSecteurs(data.filter((secteur) => secteur.parent_id === 0));
+        
         resolve(data);
       });
     });
   }
   
   useEffect(() => {
-    // Démarrer l'animation de rotation immédiatement
+
     Animated.loop(
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 1500,
-        useNativeDriver: true
-      })
+      animatedP
     ).start();
     
     const fetchData = async () => {
       setIsLoading(true);
       
       try {
-        // Charger les données
         await get_secteurs();
-        
-        // Attendre un court délai pour s'assurer que les états sont mis à jour
+
         setTimeout(() => {
           setIsLoading(false);
           
-          // Démarrer les animations après que isLoading soit défini à false
-          Animated.parallel([
-            Animated.timing(fadeAnim, {
-              toValue: 1,
-              duration: 600,
-              useNativeDriver: true
-            }),
-            Animated.timing(scaleAnim, {
-              toValue: 1,
-              duration: 500,
-              useNativeDriver: true
-            })
-          ]).start();
+          Animated.parallel(animatedP2).start();
         }, 300);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
@@ -75,36 +52,12 @@ export default function Tab() {
     fetchData();
   }, []);
 
-  // Custom loading component
-  const LoadingComponent = () => (
-    <View style={styles.loadingContainer}>
-      <Animated.View style={[styles.loadingCircle, { transform: [{ rotate: spin }] }]}>
-        <View style={styles.innerCircle}>
-          <ActivityIndicator size="large" color="#ffffff" />
-        </View>
-      </Animated.View>
-      <Text style={styles.loadingText}>Chargement des secteurs...</Text>
-      <View style={styles.loadingBars}>
-        {[1, 2, 3].map((_, index) => (
-          <Animated.View 
-            key={index}
-            style={[
-              styles.loadingBar,
-              { 
-                backgroundColor: '#01afaf',
-                marginLeft: index * 10
-              }
-            ]}
-          />
-        ))}
-      </View>
-    </View>
-  );
+
 
   return (
     <SafeAreaView style={styles.container}>
       {isLoading ? (
-        <LoadingComponent />
+        <LoadingComponent Nom='secteurs' />
       ) : (
         <Animated.View 
           style={{ 
@@ -121,7 +74,7 @@ export default function Tab() {
                 onPress={() => router.push(`/secteur/${secteur.id}`)}
               > 
                 <View style={styles.card}> 
-                  <Text style={{color: '#01afaf', fontSize: 16}}>{secteur.nom_secteur}</Text>
+                  <Text style={{color: '#01afaf', fontSize: 16}}>{secteur.name}</Text>
                   <View style={{flexDirection: 'row', gap: 10}}>
                     <View style={styles.verticleLine}></View>
                     <Text style={{maxWidth: '90%', marginTop: 10, fontWeight: "300"}}>
@@ -169,47 +122,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#01afaf',
   },
-  // Loading styles
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 3,
-    borderColor: '#01afaf',
-    borderTopColor: '#e6fafa',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  innerCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#01afaf',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#01afaf',
-    fontWeight: '500',
-  },
-  loadingBars: {
-    flexDirection: 'row',
-    marginTop: 20,
-    height: 30,
-    alignItems: 'center',
-  },
-  loadingBar: {
-    height: 4,
-    width: 60,
-    borderRadius: 2,
-    marginHorizontal: 3,
-  }
+  
 });

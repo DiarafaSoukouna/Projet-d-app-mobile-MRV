@@ -14,7 +14,7 @@ export default function ActionScreen() {
   const { id } = useLocalSearchParams(); 
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [actions, setActions] = useState([]);
+  const [structure, setStructure] = useState({});
   const [projets, setProjets] = useState([]);
   const [sous_secteurs, setSousSecteurs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,37 +23,17 @@ export default function ActionScreen() {
 
 
   
-  const get_sous_secteurs = async () => {
+
+  
+  const get_structures = async () => {
     return new Promise((resolve) => {
-      get_data(`${BaseURL}/secteurs.routes.php`, (data) => {
-        setSousSecteurs(data);
+      get_data(`${BaseURL}structures.routes.php?id=${id}`, (data) => {
+        setStructure(data);
         resolve(data);
       });
     });
   }
-  
-  const get_actions = async () => {
-    return new Promise((resolve) => {
-      get_data(`${BaseURL}/actions.routes.php`, (data) => {
-        setActions(data);
-        resolve(data);
-      });
-    });
-  }
-  
-  const get_projets = async () => {
-    return new Promise((resolve) => {
-      get_data(`${BaseURL}/projets.routes.php`, (data) => {
-        setProjets(data);
-        resolve(data);
-      });
-    });
-  }
-  
-  const return_sous_secteur = (id) => {
-    const sous_secteur = sous_secteurs.find((sous_secteur) => sous_secteur.id === id);
-    return sous_secteur ? sous_secteur.name : "Inconnu";
-  }
+
   
   useEffect(() => {
     Animated.loop(
@@ -66,9 +46,7 @@ export default function ActionScreen() {
       try {
  
         await Promise.all([
-          get_sous_secteurs(),
-          get_actions(),
-          get_projets()
+          get_structures(),
         ]);
    
         setTimeout(() => {
@@ -88,11 +66,8 @@ export default function ActionScreen() {
   }, []);
 
 
-  const currentAction = actions.find(action => action.id.toString() === id);
-  const filteredProjets = projets.filter(projet => 
-    projet.action_id === (currentAction?.id || 0) && 
-    projet.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+ 
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -100,12 +75,12 @@ export default function ActionScreen() {
       <TouchableOpacity onPress={() => router.back()}>
         <Ionicons name="arrow-back-outline" size={24} color="black" />
       </TouchableOpacity>
-      <Text style={{fontSize: 22, fontWeight: 600}}>Action</Text>
+      <Text style={{fontSize: 22, fontWeight: 600}}>Structure</Text>
 
       </View>
 
       {isLoading ? (
-        <LoadingComponent Nom='actions'/>
+        <LoadingComponent Nom='structures'/>
       ) : (
         <Animated.View 
           style={{ 
@@ -115,62 +90,39 @@ export default function ActionScreen() {
           }}
         >
           <ScrollView>
-            {currentAction ? (
+            {structure ? (
               <View>
-                <Text style={{fontSize: 20, marginTop: 15, fontWeight: '500', marginLeft: 15}}>{currentAction.name}</Text>
+                <Text style={{fontSize: 20, marginTop: 15, fontWeight: '500', marginLeft: 15}}>{structure.sigle}</Text>
 
                 <View style={{flexDirection: 'row', justifyContent: "space-between", marginTop: 20 }}>
                   <View style={{flexDirection: 'row', gap: 10, marginLeft: 20 }}>
                     <Ionicons name="calendar-outline" size={24} color="#01afaf" />
-                    <Text style={{marginTop: 4}}> Date: {new Date(currentAction.created_at).toISOString().slice(0, 10).replace(/-/g, '/')} </Text>
+                    <Text style={{marginTop: 4}}> Date de création : {new Date(structure.created_at).toISOString().slice(0, 10).replace(/-/g, '/')} </Text>
                   </View>
-                  <View style={{flexDirection: "row", gap: 10, marginRight: 20}}>
-                    <View style={styles.forme}></View>
-                    <Text style={{marginTop: 4}}>Priorité</Text>
-                  </View>
+                 
                 </View>
 
                 <Text style={styles.desc}> 
-                  <Text style={{fontSize: 20, fontWeight: 'bold', color: '#01afaf'}}>Objectif : </Text> 
-                  {currentAction.objectif}
+                  <Text style={{fontSize: 16, fontWeight: 'bold', color: '#01afaf'}}>Adresse : </Text> 
+                  {structure.address}
                 </Text>
 
                 <Text style={styles.desc}> 
-                  <Text style={{fontSize: 20, fontWeight: 'bold', color: '#01afaf'}}>Description : </Text> 
-                  {currentAction.description}
+                  <Text style={{fontSize: 16, fontWeight: 'bold', color: '#01afaf'}}>Description : </Text> 
+                  {structure.description}
+                </Text>
+                  <Text style={styles.desc}> 
+                  <Text style={{fontSize: 16, fontWeight: 'bold', color: '#01afaf'}}>Type : </Text> 
+                  {structure.type_name}
+                </Text>
+                   <Text style={styles.desc}> 
+                  <Text style={{fontSize: 16, fontWeight: 'bold', color: '#01afaf'}}>Téléphone : </Text> 
+                  {structure.phone}
                 </Text>
 
-                <Text style={{marginTop: 30, marginLeft: 15, fontSize: 20}}>
-                  Sous secteur : {return_sous_secteur(currentAction.secteur_id)}
-                </Text>
+               
 
-                <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-
-                <Text style={{marginTop: 30, marginLeft: 15, fontSize: 20}}>Projets liés</Text>
-
-                <View style={{flexDirection: 'row', flexWrap: 'wrap'}}>
-                  {filteredProjets.map(projet => (
-                    <TouchableOpacity onPress={() => router.push(`../projet/${projet.id}`)} key={projet.id} style={styles.card}>
-                      <Text style={styles.text}>{projet.name}</Text>
-                     <Text style={{ fontWeight: "400", marginTop: 10, fontSize: 12, fontFamily: "sans-serif" }}>
-                      {projet.description.length > 80
-                        ? projet.description.substring(0, 80) + '...'
-                        : projet.description}
-                    </Text>
-                      <View style={{alignItems: 'flex-end'}}>
-                        <TouchableOpacity onPress={() => router.push(`../projet/${projet.id}`)}>
-                          <Entypo name="eye" size={24} color="#01afaf" />
-                        </TouchableOpacity>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                  
-                  {filteredProjets.length === 0 && (
-                    <Text style={{marginLeft: 15, marginTop: 10, fontStyle: 'italic'}}>
-                      Aucun projet trouvé pour cette action.
-                    </Text>
-                  )}
-                </View>
+               
               </View>
             ) : (
               <View style={styles.errorContainer}>

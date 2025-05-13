@@ -10,9 +10,9 @@ const ProfileForm = () => {
     const [email, setEmail] = useState('diarafasouk@gmail.com');
     const [password, setPassword] = useState('');
     const router = useRouter();
-
+    
     const handleUpdate = () => {
-        console.log('Mise à jour avec :', { nom, prenom, email, password });
+      
     };
 
     return (

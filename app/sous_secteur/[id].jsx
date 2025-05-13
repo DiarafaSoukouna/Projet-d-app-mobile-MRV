@@ -13,13 +13,13 @@ export default function SousSecteurScreen() {
   const { id } = useLocalSearchParams(); 
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [sous_secteurs, setSousSecteurs] = useState([]);
+  const [sous_secteurs, setSousSecteurs] = useState({});
   const [actions, setActions] = useState([]);
   const get_sous_secteurs = async () => {
-    get_data(`${BaseURL}/sous_secteurs`, setSousSecteurs );
+    get_data(`${BaseURL}/secteurs.routes.php?id=${id}`, setSousSecteurs )
   }
   const get_actions = async () => {
-    get_data(`${BaseURL}/actions`, setActions);
+    get_data(`${BaseURL}/actions.routes.php`, setActions);
   }
   useEffect(() => {
     get_sous_secteurs();
@@ -28,21 +28,23 @@ export default function SousSecteurScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 20 }}>
-      <Ionicons name="arrow-back-outline" size={24} color="black" />
+    <View style={styles.header}>
+      <TouchableOpacity onPress={() => router.back()}>
+        <Ionicons name="arrow-back-outline" size={24} color="black" />
       </TouchableOpacity>
-      {sous_secteurs
-  .filter((sous_secteur) => sous_secteur.id.toString() === id)  
-  .map((sous_secteur) => (
-    <View key={sous_secteur.id}>
-      <Text style={{fontSize: 30, marginTop: 15, fontWeight: "500", marginLeft:15}}>
-        {sous_secteur.nom_sous_secteur}
+      <Text style={{fontSize: 22, fontWeight: 600}}>Sous secteur</Text>
+
+      </View>
+      
+    <View key={sous_secteurs.id}>
+      <Text style={{fontSize: 20, marginTop: 15, fontWeight: "500", marginLeft:15}}>
+        {sous_secteurs.name}
       </Text>
       <ScrollView>
         <View style={styles.contBack}>
           <Text style={styles.desc}>
             <Text style={{ fontSize: 20, fontWeight: "400" }}>Description : </Text>
-            {sous_secteur.description}
+            {sous_secteurs.description}
           </Text>
         </View>
 
@@ -56,26 +58,31 @@ export default function SousSecteurScreen() {
           />
         </View>
 
-        <Text style={{marginTop: 30, marginLeft:15, fontSize: 20}}>Actions liées</Text>
+        <Text style={{marginTop: 30, marginLeft:15, fontSize: 20}}>Actions liées </Text>
         
         <View style={{flexDirection: 'row', flexWrap: 'wrap'}}>
           {actions
-            .filter(action => action.sous_secteur_id.toString() === id && action.nom.toLowerCase().includes(searchQuery.toLowerCase()))
+            .filter(action => action.secteur_id.toString() === id && action.name.toLowerCase().includes(searchQuery.toLowerCase()))
             .map(action => (
-              <View style={styles.card} key={action.id}>
-                <Text style={styles.text}> {action.nom}</Text>
-                <Text style={{fontWeight: "300", marginTop:10, fontSize: 12}}>{action.description}.</Text>
+              <TouchableOpacity onPress={() => router.push(`../action/${action.id}`)} style={styles.card} key={action.id}>
+                <Text style={styles.text}> {action.name}</Text>
+                 <Text style={{ fontWeight: "400", marginTop: 10, fontSize: 12, fontFamily: "sans-serif" }}>
+                      {action.description.length > 80
+                        ? action.description.substring(0, 80) + '...'
+                        : action.description}
+                    </Text>
                 <View style={{alignItems: 'flex-end'}}>
-                  <TouchableOpacity onPress={() => router.push(`../action/${action.id}`)}>
+                  <TouchableOpacity >
                     <Entypo name="eye" style={{float:'right'}} size={24} color="#01afaf" />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
         </View>
+        
       </ScrollView>
     </View>
-  ))}
+
      
     </SafeAreaView>
   );
@@ -86,6 +93,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         
     },
+     errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    textAlign: 'center',
+  },
     card:{
       width: '45%',
       padding: 20,
@@ -131,5 +149,12 @@ const styles = StyleSheet.create({
       flex: 1,
       backgroundColor: "transparent",
   
+    },
+     header:{
+      backgroundColor: '#e6fafa',
+      padding: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap : 10
     },
 })

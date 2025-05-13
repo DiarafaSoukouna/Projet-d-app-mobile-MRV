@@ -8,6 +8,8 @@ import { useRouter } from 'expo-router';
 import {get_data} from '../get_api';
 import { useState, useEffect } from 'react';
 import { BaseURL } from '../get_api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 
 export default function Home() {
@@ -18,27 +20,44 @@ export default function Home() {
   const [actions, setActions] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [user, setUser] = useState({});
+  const [userId, setUserId] = useState(1);
 
   const get_secteurs = async () => {
-    get_data(`${BaseURL}/secteurs.routes.php`, setSecteurs );
+    get_data(`${BaseURL}/secteurs.routes.php`, setSecteurs )
   }
   const get_actions = async () => {
-    get_data(`${BaseURL}/actions`, setActions);
+    get_data(`${BaseURL}/actions.routes.php`, setActions);
   }
-  const get_documents = async () => {
-    get_data(`${BaseURL}/documents`, setDocuments);
-  }
-  const get_notifications = async () => {
-    get_data(`${BaseURL}/notifications`, setNotifications);
-  }
+    const getInitials = (text1, text2) => {
+  const firstLetter1 = text1?.trim()?.charAt(0).toUpperCase() || '';
+  const firstLetter2 = text2?.trim()?.charAt(0).toUpperCase() || '';
+  return firstLetter1 + firstLetter2;
+};
+  // const get_documents = async () => {
+  //   get_data(`${BaseURL}/documents`, setDocuments);
+  // }
+  // const get_notifications = async () => {
+  //   get_data(`${BaseURL}/notifications`, setNotifications);
+  // }
+ 
   useEffect(() => {
+ 
+ const id_user =  AsyncStorage.getItem('userId');
+if (id_user !== null) {
+  setUserId(parseInt(id_user));
+}
+ const get_user = async () => {
+      get_data(`${BaseURL}/users.routes.php?id=${userId}`, setUser);
+    }
     get_secteurs();
     get_actions();
-    get_documents();
-    get_notifications();
+    get_user()
+    // get_documents();
+    // get_notifications();
   }, []);
   useEffect(() => {
-    setSecteursAffiches(secteurs.slice(0, 3)); 
+    setSecteursAffiches(secteurs.filter(secteur=> secteur.parent_id===0).slice(0, 3)); 
 }, [secteurs]);
   
   return (
@@ -51,7 +70,7 @@ export default function Home() {
             <TouchableOpacity onPress={()=> router.push('../profil')}>
             <View style={styles.back}>
 
-            <Text style={{color: '#fff', fontSize: 22, fontWeight: 600}}>DS</Text>
+            <Text style={{color: '#fff', fontSize: 22, fontWeight: 600}}>{getInitials(user.prenom, user.nom )}</Text>
 
             </View>
             </TouchableOpacity>
@@ -90,14 +109,14 @@ export default function Home() {
         {actions.length > 0 && (
     <TouchableOpacity activeOpacity={0.7} onPress={() => router.push(`../action/${actions[0].id}`)}>
         <View style={styles.cardAction}>
-                <Text style={{fontSize: 25, fontWeight: 500, marginBottom:10}}>{actions[0].nom}</Text>
+                <Text style={{fontSize: 25, fontWeight: 500, marginBottom:10}}>{actions[0].name}</Text>
                 <Text>{actions[0].description}</Text>
 
                 <View style={{justifyContent: 'space-between', flexDirection: 'row', marginTop: 20}}>
                     <View style={{flexDirection: 'row'}}>
                         <AntDesign name="calendar" size={24} color="#01AFAF" />
                         <Text style={{marginTop: 3, marginLeft: 10}}>
-                            Date: {new Date(actions[0].created_date).toISOString().slice(0, 10).replace(/-/g, '/')}
+                            Date: {new Date(actions[0].created_at).toISOString().slice(0, 10).replace(/-/g, '/')}
                         </Text>
                     </View>
                     <Feather name="corner-down-right" size={30} color="#01AFAF" />
